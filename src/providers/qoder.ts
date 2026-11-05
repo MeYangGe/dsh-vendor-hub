@@ -138,22 +138,123 @@ function quotaWindowsOf(payload: unknown): QuotaWindow[] {
   return windows
 }
 
+/**
+ * Qoder's own usage page, as magpie reads it (`internal/provider/qoder_usage.go`,
+ * and `opencode-qoder-auth`'s `fetchUsage`):
+ *
+ *   GET {openapi}/sash/api/v2/me/usage
+ *   Authorization: Bearer <device token>   ← the device token, NOT the job token
+ *   Cosy-ClientType: 10
+ *   User-Agent: Qoder
+ *
+ * The answer is `{displayMode, qoderUsage}`: an enterprise account reports only
+ * its mode, a personal one lists the pools of credits it may spend.
+ */
+async function fetchUsage(account: AccountRecord, vendor: VendorId): Promise<AccountQuota | null> {
+  const host = HOSTS[vendor]
+  if (host === undefined) return null
+  const device = firstStr(account.secret['deviceToken'], account.secret['token'])
+  if (device.length === 0) return null
+  const result = await requestRaw(`${host}/sash/api/v2/me/usage`, {
+    method: 'GET',
+    headers: {
+      accept: 'application/json',
+      authorization: `Bearer ${device}`,
+      'cosy-clienttype': '10',
+      'user-agent': 'Qoder',
+    },
+  })
+  if (!result.ok || result.json === undefined) return null
+  return parseUsage(result.json, account)
+}
+
+/** The pools Qoder spends one after another before an account stops. */
+const SPENT_IN_TURN = new Set(['Credits', 'Add-on credits', 'Shared credits'])
+
+function creditWindow(candidate: unknown, fallbackName: string): QuotaWindow | null {
+  const record = asRecord(candidate)
+  if (Object.keys(record).length === 0) return null
+  const total = firstNum(record['total'], record['cap'], record['totalQuota'], record['total_quota'])
+  const used = firstNum(record['used'], record['usedQuota'], record['used_quota'])
+  const remaining = firstNum(
+    record['remaining'],
+    record['remain'],
+    record['available'],
+    record['remainingQuota'],
+  )
+  if (total === null && used === null && remaining === null) return null
+  const name = firstStr(record['name'], record['packageName'], record['title'])
+  return windowOf({
+    name: name.length > 0 ? name : fallbackName,
+    unit: 'credits',
+    total,
+    used,
+    remaining,
+    expiresAt: isoTimestamp(record['expiresAt'] ?? record['expires_at'] ?? record['expireAt']),
+  })
+}
+
+function parseUsage(payload: unknown, account: AccountRecord): AccountQuota | null {
+  const env = asRecord(payload)
+  const mode = firstStr(env['displayMode'], env['display_mode'])
+  if (mode === 'enterprise') {
+    return {
+      account: account.account ?? '',
+      plan: 'Enterprise',
+      windows: [],
+      balance: null,
+      fetchedAt: nowIso(),
+    }
+  }
+  if (mode !== 'qoder') return null
+  const usage = asRecord(env['qoderUsage'] ?? env['qoder_usage'])
+  if (Object.keys(usage).length === 0) return null
+  const windows: QuotaWindow[] = []
+  const push = (candidate: unknown, name: string): void => {
+    const window = creditWindow(candidate, name)
+    if (window !== null) windows.push(window)
+  }
+  push(usage['userQuota'] ?? usage['user_quota'], 'Credits')
+  push(usage['addOnQuota'] ?? usage['add_on_quota'], 'Add-on credits')
+  push(usage['orgResourcePackage'] ?? usage['org_resource_package'], 'Shared credits')
+  const dedicated = asArray(usage['dedicatedResourcePackages'] ?? usage['dedicated_resource_packages'])
+  dedicated.forEach((item, index) => {
+    push(item, `Dedicated ${index + 1}`)
+  })
+  if (windows.length === 0) return null
+  const plan = firstStr(usage['userType'], usage['user_type'])
+  const shared = windows.filter((window) => SPENT_IN_TURN.has(window.name)).length > 1
+  return {
+    account: account.account ?? '',
+    plan: plan.length > 0 ? plan : null,
+    windows: shared
+      ? windows.map((window) => ({ ...window, note: '多个额度池按顺序消耗' }))
+      : windows,
+    balance: null,
+    fetchedAt: nowIso(),
+  }
+}
+
 function createAdapter(vendor: VendorId): VendorAdapter {
   return {
     id: vendor,
 
     async readQuota(account: AccountRecord): Promise<AccountQuota> {
+      // The usage page is the truth about allowances; campaigns are not.
+      const usage = await fetchUsage(account, vendor)
+      if (usage !== null) return usage
       const campaigns = await fetchCampaigns(account, vendor)
-      // The campaigns answer sometimes carries the account's quota alongside;
-      // when it does, use it. When it does not, say so rather than guess.
       const rawPayload = { campaigns: campaigns.map((campaign) => campaign.raw) }
       const windows = quotaWindowsOf(rawPayload)
       if (windows.length === 0) {
+        const device = firstStr(account.secret['deviceToken'], account.secret['token'])
         throw new AdapterFailure({
           code: 'unsupported',
           message:
-            'Qoder 的额度查询接口没有公开契约，本插件只读取到活动信息，不猜额度。' +
-            '签到与活动奖励仍可正常使用；额度请在 Qoder 客户端或 magpie 查看。',
+            (device.length === 0
+              ? '这个 Qoder 账号没有保存 device token，读不到用量页；'
+              : 'Qoder 的用量页 /sash/api/v2/me/usage 没有返回额度块（可能账号无计划或凭据已被换掉）；') +
+            '请用「浏览器登录」重新接入，或到 Qoder 客户端查看额度。',
         })
       }
       return {

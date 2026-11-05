@@ -274,11 +274,13 @@ function qoderFlow(vendor: 'qoder-cn' | 'qoder-global'): LoginFlow {
       })
       const body = exchange.json as Record<string, unknown> | undefined
       const jobToken = typeof body?.['token'] === 'string' ? body['token'].trim() : ''
-      if (exchange.status === 200 && jobToken.length > 0) return { token: jobToken }
+      // The device token is kept as well: the usage endpoint
+      // (/sash/api/v2/me/usage) is read with the DEVICE token, not the job token.
+      if (exchange.status === 200 && jobToken.length > 0) return { token: jobToken, deviceToken }
     } catch {
       // Fall back to the device token, which the plugin also accepts.
     }
-    return { token: deviceToken }
+    return { token: deviceToken, deviceToken }
   }
 
   return {
@@ -388,8 +390,16 @@ async function workbuddyFlow(vendor: 'workbuddy' | 'workbuddy-ai'): Promise<Logi
     async wait() {
       const deadline = Date.now() + SIGN_IN_TIMEOUT_MS
       const token = await until(`/v2/plugin/auth/token?state=${encoded}`, {}, 11217, deadline)
-      const access = typeof token['access'] === 'string' && token['access'].length > 0 ? token['access'] : ''
-      if (access.length === 0) throw new Error(`${site.name} 没有回传 access token`)
+      // The wire field is `accessToken`; magpie's merge() renames it to `access`
+      // after the fact. Reading `access` straight off the response is what made
+      // this sign-in fail with "no access token".
+      const wire = token['accessToken'] ?? token['access_token'] ?? token['access']
+      const access = typeof wire === 'string' ? wire.trim() : ''
+      if (access.length === 0) {
+        throw new Error(
+          `${site.name} 没有回传 access token（响应字段：${Object.keys(token).join(', ') || '空'}）`,
+        )
+      }
       const domain = typeof token['domain'] === 'string' && token['domain'].length > 0 ? token['domain'] : ''
       let uid = ''
       try {
