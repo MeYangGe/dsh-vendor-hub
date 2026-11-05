@@ -1,0 +1,63 @@
+{
+  "name": "dsh-magpie-connect",
+  "displayName": "DSH Magpie Connect",
+  "description": "聚合多家编码套餐供应商（Qoder / WorkBuddy / Trae CN / ZCode / CodeArts）的额度、用量与每日签到 —— DSH 侧栏额度卡 + 用量概览 + 签到中心。",
+  "version": "0.1.0",
+  "author": "meyangge",
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "usage",
+    "quota",
+    "checkin",
+    "magpie"
+  ],
+  "type": "module",
+  "engines": {
+    "dsh": ">=0.2.1-rc.1",
+    "node": "^22.19.0 || >=24.0.0"
+  },
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./client": "./lib/client.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "assets/icon.svg",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsdown && node scripts/postbuild.mjs",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.client.json",
+    "check": "pnpm run typecheck && pnpm run build"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-slots",
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-primitives"
+      ],
+      "platform": "web"
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "@types/react": "~18.3.12",
+    "tsdown": "^0.22.0",
+    "typescript": "^5.9.2"
+  },
+  "license": "MIT"
+}
