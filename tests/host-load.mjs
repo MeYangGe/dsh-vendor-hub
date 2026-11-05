@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Load the built Host bundle the way the harness does: a fake cordis context
  * supplies `logger`, `effect` and `webServer`, `apply()` runs, and the routes it
  * registers are then served over a real HTTP listener.
@@ -50,7 +50,7 @@ const ctx = {
 
 mod.apply(ctx)
 
-assert.equal(routes.length, 7, `应挂载 7 条路由，实际 ${routes.length}：${routes.map((r) => r.path).join(', ')}`)
+assert.equal(routes.length, 10, `应挂载 7 条路由，实际 ${routes.length}：${routes.map((r) => r.path).join(', ')}`)
 for (const route of routes) {
   assert.equal(route.kind, 'exact', '路由必须是 exact')
   assert.ok(route.path.startsWith('/plugins/dsh-magpie-connect/'), route.path)

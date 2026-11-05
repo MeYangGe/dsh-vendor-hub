@@ -6,11 +6,12 @@
  * shows the label, the masked account and the local id's tail.
  */
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { VendorMeta } from '../types.ts'
 import type { AccountStatus } from '../types.ts'
 import { VENDORS } from '../vendors.ts'
 import { Glyph, Pill } from './parts.tsx'
+import { cancelBrowserLogin, loadStatus, pollBrowserLogin, startBrowserLogin } from './store.ts'
 
 export interface ProvidersProps {
   accounts: AccountStatus[]
@@ -133,7 +134,55 @@ function CredentialForm(props: {
   const [account, setAccount] = useState('')
   const [values, setValues] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
+  /** The in-flight browser sign-in, polled until it settles. */
+  const [browser, setBrowser] = useState<{ session: string; state: string; note: string | null } | null>(null)
   const fields = props.vendor.credential.fields
+
+  // Poll one sign-in until the Host says it stored the credential. The secret
+  // travels browser -> loopback -> Host, never through this component.
+  useEffect(() => {
+    if (browser === null || browser.state !== 'waiting') return
+    const session = browser.session
+    let done = false
+    const timer = setInterval(() => {
+      void pollBrowserLogin(session)
+        .then(async (result) => {
+          if (done) return
+          if (result.state === 'saved') {
+            done = true
+            clearInterval(timer)
+            await loadStatus()
+            setBrowser({ session, state: 'saved', note: null })
+          } else if (result.state === 'error' || result.state === 'cancelled') {
+            done = true
+            clearInterval(timer)
+            setBrowser({ session, state: result.state, note: result.note ?? null })
+          }
+        })
+        .catch(() => undefined)
+    }, 1500)
+    const giveUp = setTimeout(() => {
+      if (done) return
+      done = true
+      clearInterval(timer)
+      void cancelBrowserLogin(session).catch(() => undefined)
+      setBrowser({ session, state: 'error', note: '登录超时（10 分钟），请重试' })
+    }, 10 * 60 * 1000)
+    return () => {
+      clearInterval(timer)
+      clearTimeout(giveUp)
+    }
+  }, [browser])
+
+  async function beginBrowserLogin(): Promise<void> {
+    setSaving(true)
+    try {
+      const started = await startBrowserLogin(props.vendor.id)
+      setBrowser({ session: started.session, state: started.state, note: started.note })
+    } finally {
+      setSaving(false)
+    }
+  }
 
   return (
     <div className="mmp-form">
@@ -167,6 +216,14 @@ function CredentialForm(props: {
           type="button"
           className="mmp-btn"
           data-variant="primary"
+          disabled={props.busy || saving || (browser !== null && browser.state === 'waiting')}
+          onClick={() => void beginBrowserLogin()}
+        >
+          {browser !== null && browser.state === 'waiting' ? '等待浏览器登录…' : '浏览器登录'}
+        </button>
+        <button
+          type="button"
+          className="mmp-btn"
           disabled={props.busy || saving}
           onClick={async () => {
             setSaving(true)
@@ -180,14 +237,38 @@ function CredentialForm(props: {
             }
           }}
         >
-          {saving ? '保存并校验中…' : '保存并校验'}
+          {saving ? '保存并校验中…' : '粘贴保存'}
         </button>
         <button type="button" className="mmp-btn" data-variant="danger" disabled={props.busy} onClick={props.onRemoveVendor}>
           清除该供应商全部凭证
         </button>
       </div>
+      {browser !== null ? (
+        <div
+          className={
+            browser.state === 'saved' ? 'mmp-ok' : browser.state === 'error' ? 'mmp-error' : 'mmp-hint'
+          }
+        >
+          {browserText(browser)}
+        </div>
+      ) : null}
     </div>
   )
+}
+
+function browserText(browser: { state: string; note: string | null }): string {
+  switch (browser.state) {
+    case 'waiting':
+      return browser.note ?? '已在浏览器打开登录页；登录完成后会自动回传凭证，这个窗口无需操作。'
+    case 'saved':
+      return '浏览器登录成功，凭证已保存并读了一次额度。'
+    case 'cancelled':
+      return '已取消这次浏览器登录。'
+    case 'error':
+      return browser.note ?? '浏览器登录失败，可改用下方粘贴方式。'
+    default:
+      return browser.note ?? ''
+  }
 }
 
 const LABELS: Record<string, string> = {

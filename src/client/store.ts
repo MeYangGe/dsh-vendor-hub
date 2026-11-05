@@ -157,6 +157,38 @@ export async function clearLog(): Promise<void> {
   await loadStatus()
 }
 
+// ----------------------------------------------------------- browser login
+
+export interface BrowserLoginStart {
+  session: string
+  state: 'waiting' | 'done' | 'error' | 'cancelled'
+  url: string
+  note: string | null
+}
+
+export interface BrowserLoginStatus {
+  state: 'waiting' | 'done' | 'saved' | 'error' | 'cancelled'
+  note?: string | null
+  id?: string
+}
+
+/** Open the vendor's sign-in page with a loopback redirect. */
+export async function startBrowserLogin(vendor: string): Promise<BrowserLoginStart> {
+  return postJson<BrowserLoginStart>('/auth/browser/start', { vendor })
+}
+
+/** Poll one sign-in; `saved` means the Host already stored the credential. */
+export async function pollBrowserLogin(session: string): Promise<BrowserLoginStatus> {
+  const response = await fetch(`${ROUTE_BASE}/auth/browser/status?session=${encodeURIComponent(session)}`, {
+    credentials: 'same-origin',
+  })
+  return (await response.json()) as BrowserLoginStatus
+}
+
+export async function cancelBrowserLogin(session: string): Promise<void> {
+  await postJson('/auth/browser/cancel', { session })
+}
+
 // ------------------------------------------------------------------ ticker
 
 function intervalOf(): number {

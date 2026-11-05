@@ -29,6 +29,7 @@ import {
   saveSettings,
 } from './store.ts'
 import { vendorMeta } from '../vendors.ts'
+import { cancelBrowserLogin, pollBrowserLogin, startBrowserLogin } from './browser-login.ts'
 
 export { ROUTE_BASE }
 
@@ -335,6 +336,81 @@ export function mountRoutes(deps: RouteDeps): Array<{
     sendJson(response, 200, { accounts })
   }
 
+  /**
+   * POST browser/start - open the vendor's sign-in page in the system browser
+   * with a loopback redirect. The credential comes back to this process, never
+   * through the page.
+   */
+  async function postBrowserStart(request: IncomingMessage, response: ServerResponse): Promise<void> {
+    if (!sameOrigin(request)) {
+      sendJson(response, 403, { error: 'cross_origin' })
+      return
+    }
+    let body: Record<string, unknown>
+    try {
+      body = asObject(await readBody(request))
+    } catch (error) {
+      sendJson(response, 400, { error: (error as Error).message })
+      return
+    }
+    const vendorRaw = asString(body['vendor'])
+    if (!isVendor(vendorRaw)) {
+      sendJson(response, 400, { error: 'unknown_vendor' })
+      return
+    }
+    const session = startBrowserLogin(vendorRaw)
+    sendJson(response, 200, {
+      session: session.id,
+      state: session.state,
+      url: session.url,
+      note: session.error ?? null,
+    })
+  }
+
+  /**
+   * GET browser/status - poll one sign-in. When the callback has delivered a
+   * credential it is saved here, so the secret never travels to the browser.
+   */
+  async function getBrowserStatus(request: IncomingMessage, response: ServerResponse): Promise<void> {
+    const url = new URL(request.url ?? '/', `http://${request.headers.host ?? '127.0.0.1'}`)
+    const id = url.searchParams.get('session') ?? ''
+    const session = pollBrowserLogin(id)
+    if (session === undefined) {
+      sendJson(response, 404, { error: 'unknown_session' })
+      return
+    }
+    if (session.state === 'done' && session.secret !== undefined) {
+      const record = saveAccount({
+        vendor: session.vendor,
+        secret: session.secret,
+      })
+      const status = await refreshAccount(record, options)
+      // Consume the credential so a second poll cannot save it twice.
+      session.secret = undefined
+      session.state = 'done'
+      sendJson(response, 200, { state: 'saved', id: record.id, status })
+      return
+    }
+    sendJson(response, 200, { state: session.state, note: session.error ?? null })
+  }
+
+  /** POST browser/cancel - drop one pending sign-in and its listener. */
+  async function postBrowserCancel(request: IncomingMessage, response: ServerResponse): Promise<void> {
+    if (!sameOrigin(request)) {
+      sendJson(response, 403, { error: 'cross_origin' })
+      return
+    }
+    let body: Record<string, unknown>
+    try {
+      body = asObject(await readBody(request))
+    } catch (error) {
+      sendJson(response, 400, { error: (error as Error).message })
+      return
+    }
+    cancelBrowserLogin(asString(body['session']))
+    sendJson(response, 200, { ok: true })
+  }
+
   return [
     { kind: 'exact', path: `${ROUTE_BASE}/status`, handler: status },
     { kind: 'exact', path: `${ROUTE_BASE}/settings`, handler: (request, response) =>
@@ -344,5 +420,8 @@ export function mountRoutes(deps: RouteDeps): Array<{
     { kind: 'exact', path: `${ROUTE_BASE}/checkin`, handler: postCheckin },
     { kind: 'exact', path: `${ROUTE_BASE}/log/clear`, handler: postLogClear },
     { kind: 'exact', path: `${ROUTE_BASE}/accounts`, handler: getAccounts },
+    { kind: 'exact', path: `${ROUTE_BASE}/auth/browser/start`, handler: postBrowserStart },
+    { kind: 'exact', path: `${ROUTE_BASE}/auth/browser/status`, handler: getBrowserStatus },
+    { kind: 'exact', path: `${ROUTE_BASE}/auth/browser/cancel`, handler: postBrowserCancel },
   ]
 }

@@ -15,6 +15,7 @@ import { ROUTE_BASE } from './types.ts'
 import { mountRoutes } from './host/routes.ts'
 import { buildStatus, checkinAll, nextCheckinAt, refreshAll, shanghaiDay, shanghaiWallClockToUtc, type EngineOptions } from './host/engine.ts'
 import { listAccounts, loadSettings } from './host/store.ts'
+import { closeAllLogins } from './host/browser-login.ts'
 
 export const name = 'magpie-connect'
 
@@ -109,6 +110,8 @@ export function apply(ctx: Context): void {
     const minutes = minute % 60
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
   }
+
+  ctx.effect(() => () => closeAllLogins(), 'dsh-magpie-connect: browser logins')
 
   ctx.effect(() => {
     timer = setInterval(() => {
