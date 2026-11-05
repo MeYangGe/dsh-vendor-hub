@@ -38,7 +38,9 @@
   "scripts": {
     "build": "tsdown && node scripts/postbuild.mjs",
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.client.json",
-    "check": "pnpm run typecheck && pnpm run build"
+    "check": "pnpm run typecheck && pnpm run build",
+    "verify:live": "node scripts/verify-live.mjs",
+    "test": "node tests/smoke.mjs && node tests/host-load.mjs"
   },
   "dsh": {
     "bundle": {
