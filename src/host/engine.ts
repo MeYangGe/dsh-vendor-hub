@@ -220,7 +220,8 @@ export function buildStatus(options: EngineOptions, scheduler: ConnectStatus['sc
   for (const account of accounts) {
     if (account.error) problems.push(`${account.label}（${account.vendor}）：${account.error.message}`)
   }
-  if (accounts.length === 0) problems.push('还没有保存任何供应商账号：去「供应商」页粘贴第一份凭证。')
+  // An empty book already renders its own guidance on the Overview; repeating it
+  // here made the panel say "add an account" twice in a row.
   let log: CheckinLogEntry[] = []
   try {
     log = readLog(60)
