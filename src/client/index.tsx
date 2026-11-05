@@ -52,10 +52,16 @@ export function apply(ctx: ClientContext): void {
     }
   })
 
-  // The center-column panel itself.
-  ctx.slots.register(
-    { name: 'main', key: PANEL_ID } as never,
-    () => <ConnectPanel />,
+  // The center-column panel itself. `main` is declared by the layout entry's own
+  // `register({ name: 'root', children: { main } })`, and entries activate
+  // concurrently — registering eagerly races that declaration and throws
+  // `slot "main" is not declared`, which fails this bundle and aborts web boot.
+  // `inject` runs the registration only once the declaration is committed.
+  ctx.slots.inject('main', () =>
+    ctx.slots.register(
+      { name: 'main', key: PANEL_ID } as never,
+      () => <ConnectPanel />,
+    ),
   )
 
   // The sidebar footer card: opened by a press, hidden when the user turns it off.

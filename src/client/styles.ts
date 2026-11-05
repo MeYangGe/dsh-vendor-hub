@@ -1,4 +1,4 @@
-/**
+﻿/**
  * The console's stylesheet.
  *
  * Visual language follows magpie's own web UI: a neutral canvas, soft cards with
@@ -34,7 +34,15 @@ export const PANEL_CSS = `
 }
 
 /* ---------------------------------------------------------------- shell */
-.mmp-panel{display:flex;flex-direction:column;gap:14px;padding:18px 20px 28px;height:100%;overflow:auto}
+/* The panel is a column that owns the full height, with a fixed header and a
+   scrolling body. the panel class itself must never claim height: a content pane
+   that sets height:100% inside a flex column pushes everything below it out of
+   sight - that was the "blank supplier page" defect. */
+.mmp-shell{display:flex;flex-direction:column;height:100%;min-height:0}
+.mmp-header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:14px 20px 10px;border-bottom:1px solid var(--mmp-line);flex:0 0 auto}
+.mmp-scroll{flex:1 1 auto;min-height:0;overflow:auto}
+.mmp-panel{display:flex;flex-direction:column;gap:14px;padding:16px 20px 28px}
 .mmp-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .mmp-title{font-size:16px;font-weight:600;letter-spacing:-0.01em;margin:0}
 .mmp-sub{color:var(--mmp-fg-dim);font-size:12px}
