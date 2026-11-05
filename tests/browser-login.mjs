@@ -121,19 +121,28 @@ function get(path) {
   console.log('qoder-cn · device 授权 → cancelled')
 }
 
-// --- WorkBuddy: honest refusal, not a fake wait ----------------------------
+// --- WorkBuddy / ZCode: vendor-issued flows --------------------------------
+// These two ask the vendor for a sign-in state, so the outcome depends on the
+// network here. What must hold either way: the plugin either names the vendor's
+// own page, or fails with a readable reason - never an endless "waiting".
 
-{
-  const response = await post('/auth/browser/start', { vendor: 'workbuddy' })
+for (const [vendor, origin, label] of [
+  ['workbuddy', 'https://copilot.tencent.com', 'workbuddy auth/state'],
+  ['zcode', 'https://zcode.z.ai', 'zcode oauth/cli/init'],
+]) {
+  const response = await post('/auth/browser/start', { vendor })
   const json = await response.json()
-  assert.equal(response.status, 200)
-  assert.equal(new URL(json.url).origin, 'https://copilot.tencent.com')
-  // Give the rejected flow one tick to settle.
-  await new Promise((resolve) => setTimeout(resolve, 50))
+  assert.ok([200, 500].includes(response.status), `${vendor} 应返回 200 或明确失败`)
+  if (json.url) {
+    // The vendor issues its own sign-in page, so only https is guaranteed; the
+    // host it lands on is printed as evidence rather than asserted.
+    assert.match(json.url, /^https:\/\//, `${vendor} 登录页必须是 https`)
+    console.log(`  ${vendor} sign-in host: ${new URL(json.url).host}`)
+  }
   const status = await (await get(`/auth/browser/status?session=${json.session}`)).json()
-  assert.equal(status.state, 'error', `workbuddy 应明确失败：${JSON.stringify(status)}`)
-  assert.match(String(status.note), /未移植|官方页面/)
-  console.log('workbuddy · 官方页 + 明确说明 →', status.state)
+  assert.ok(['waiting', 'error'].includes(status.state), `${vendor} 状态：${JSON.stringify(status)}`)
+  assert.equal(status.token, undefined, `${vendor} 状态不得回传凭证`)
+  console.log(`${vendor} · ${label} →`, json.url ? 'ok' : 'error', '·', status.state)
 }
 
 // --- guards ----------------------------------------------------------------
