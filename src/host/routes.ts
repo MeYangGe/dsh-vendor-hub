@@ -358,7 +358,7 @@ export function mountRoutes(deps: RouteDeps): Array<{
       sendJson(response, 400, { error: 'unknown_vendor' })
       return
     }
-    const session = startBrowserLogin(vendorRaw)
+    const session = await startBrowserLogin(vendorRaw)
     sendJson(response, 200, {
       session: session.id,
       state: session.state,
