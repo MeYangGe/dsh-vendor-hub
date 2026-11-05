@@ -45,7 +45,9 @@ export function Providers(props: ProvidersProps) {
 
       {VENDORS.map((vendor) => {
         const saved = savedByVendor.get(vendor.id) ?? []
-        const open = openVendor === vendor.id
+        // A vendor with nothing saved opens by default: the page should read as
+        // seven forms ready to fill, not seven closed rows.
+        const open = openVendor === vendor.id || (openVendor === null && saved.length === 0)
         return (
           <div className="mmp-block" key={vendor.id}>
             <div className="mmp-block-head" style={{ cursor: 'pointer' }} onClick={() => setOpenVendor(open ? null : vendor.id)}>
