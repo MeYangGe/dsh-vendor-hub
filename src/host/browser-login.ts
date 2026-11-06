@@ -63,7 +63,7 @@ const closers = new Map<string, () => void>()
 /** Open a URL in the operating system's default browser. */
 export function openBrowser(url: string): void {
   // Tests set this so a route check never pops a real browser window.
-  if (process.env['DSH_MAGPIE_CONNECT_NO_BROWSER'] === '1') return
+  if (process.env['DSH_VENDOR_HUB_NO_BROWSER'] === '1') return
   const quoted = url.replace(/"/g, '%22')
   const command =
     process.platform === 'win32'
@@ -81,7 +81,7 @@ function base64url(buffer: Buffer): string {
 }
 
 function page(ok: boolean, title: string, detail: string): string {
-  return `<!doctype html><html lang="zh"><head><meta charset="utf-8"><title>Magpie Connect</title></head>
+  return `<!doctype html><html lang="zh"><head><meta charset="utf-8"><title>Vendor Hub</title></head>
 <body style="font:15px/1.6 system-ui,sans-serif;padding:40px;max-width:560px;margin:0 auto">
 <h2 style="color:${ok ? '#2f9e6a' : '#cc4b48'};margin:0 0 8px">${title}</h2><p>${detail}</p></body></html>`
 }

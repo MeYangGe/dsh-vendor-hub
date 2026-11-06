@@ -19,9 +19,9 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import assert from 'node:assert/strict'
 
-const dir = mkdtempSync(join(tmpdir(), 'mmp-login-'))
-process.env['DSH_MAGPIE_CONNECT_DATA_DIR'] = dir
-process.env['DSH_MAGPIE_CONNECT_NO_BROWSER'] = '1'
+const dir = mkdtempSync(join(tmpdir(), 'vdh-login-'))
+process.env['DSH_VENDOR_HUB_DATA_DIR'] = dir
+process.env['DSH_VENDOR_HUB_NO_BROWSER'] = '1'
 
 const mod = await import('../lib/index.js')
 
@@ -54,7 +54,7 @@ const server = createServer(async (request, response) => {
 })
 await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve))
 const port = server.address().port
-const base = `http://127.0.0.1:${port}/plugins/dsh-magpie-connect`
+const base = `http://127.0.0.1:${port}/plugins/dsh-vendor-hub`
 
 function post(path, body) {
   return fetch(base + path, {

@@ -16,14 +16,14 @@ export function toneOf(percent: number | null): Tone {
 
 export function Pill({ tone = 'neutral', children, title }: { tone?: Tone; children: ReactNode; title?: string }) {
   return (
-    <span className="mmp-pill" data-tone={tone} title={title}>
+    <span className="vdh-pill" data-tone={tone} title={title}>
       {children}
     </span>
   )
 }
 
 export function Glyph({ text }: { text: string }) {
-  return <span className="mmp-glyph">{text}</span>
+  return <span className="vdh-glyph">{text}</span>
 }
 
 /** One allowance window: name/amount line, then a bar that drains. */
@@ -34,24 +34,24 @@ export function Bar({ window, showReset = true }: { window: QuotaWindow; showRes
   const total = window.total === null ? '' : ` / ${formatAmount(window.total)}`
   const reset = showReset ? resetText(window) : ''
   return (
-    <div className="mmp-bar">
-      <div className="mmp-bar-top">
+    <div className="vdh-bar">
+      <div className="vdh-bar-top">
         <span>{window.name}</span>
-        <span className="mmp-grow" />
+        <span className="vdh-grow" />
         <span>
           {left}
           {total}
           {percent === null ? '' : ` · ${Math.round(percent)}%`}
         </span>
       </div>
-      <div className="mmp-bar-track">
+      <div className="vdh-bar-track">
         <div
-          className="mmp-bar-fill"
+          className="vdh-bar-fill"
           data-tone={tone}
           style={{ width: `${percent === null ? 0 : Math.max(2, Math.min(100, percent))}%` }}
         />
       </div>
-      {reset.length > 0 || window.note ? <div className="mmp-bar-note">{[reset, window.note].filter(Boolean).join(' · ')}</div> : null}
+      {reset.length > 0 || window.note ? <div className="vdh-bar-note">{[reset, window.note].filter(Boolean).join(' · ')}</div> : null}
     </div>
   )
 }
@@ -72,7 +72,7 @@ function resetText(window: QuotaWindow): string {
 export function MiniBar({ percent }: { percent: number | null }) {
   const tone = toneOf(percent)
   return (
-    <span className="mmp-share">
+    <span className="vdh-share">
       <i data-tone={tone} style={{ width: `${percent === null ? 0 : Math.max(2, Math.min(100, percent))}%` }} />
     </span>
   )

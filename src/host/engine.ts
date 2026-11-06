@@ -107,7 +107,7 @@ export async function refreshAccount(record: AccountRecord, options: EngineOptio
   } catch (error) {
     const failure = failureOf(error)
     patchEntry(record.id, { quota: undefined, error: failure, ms: Date.now() - started, at: new Date().toISOString() })
-    options.logger.warn(`dsh-magpie-connect: ${record.vendor} ${record.label} 额度读取失败 - ${failure.message}`)
+    options.logger.warn(`dsh-vendor-hub: ${record.vendor} ${record.label} 额度读取失败 - ${failure.message}`)
   }
   return statusOf(record, settings)
 }
@@ -162,7 +162,7 @@ export async function checkinAccount(
     } catch (error) {
       const failure = failureOf(error)
       status = { outcome: 'failed', message: failure.message, at: new Date().toISOString() }
-      options.logger.warn(`dsh-magpie-connect: ${record.vendor} ${record.label} 签到失败 - ${failure.message}`)
+      options.logger.warn(`dsh-vendor-hub: ${record.vendor} ${record.label} 签到失败 - ${failure.message}`)
     }
   }
   patchEntry(record.id, { checkin: status, at: new Date().toISOString() })

@@ -17,8 +17,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import assert from 'node:assert/strict'
 
-const dir = mkdtempSync(join(tmpdir(), 'mmp-test-'))
-process.env['DSH_MAGPIE_CONNECT_DATA_DIR'] = dir
+const dir = mkdtempSync(join(tmpdir(), 'vdh-test-'))
+process.env['DSH_VENDOR_HUB_DATA_DIR'] = dir
 
 const store = await import('../src/host/store.ts')
 const engine = await import('../src/host/engine.ts')
@@ -120,20 +120,20 @@ await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve))
 const port = server.address().port
 
 const origin = `http://127.0.0.1:${port}`
-const statusResponse = await realFetch(`${origin}/plugins/dsh-magpie-connect/status`)
+const statusResponse = await realFetch(`${origin}/plugins/dsh-vendor-hub/status`)
 assert.equal(statusResponse.status, 200)
 const statusDoc = await statusResponse.json()
 assert.equal(statusDoc.schema, 1)
 assert.ok(!JSON.stringify(statusDoc).includes('JWT-TEST-TOKEN'), 'status 路由不得泄露凭证')
 
-const crossOrigin = await realFetch(`${origin}/plugins/dsh-magpie-connect/auth`, {
+const crossOrigin = await realFetch(`${origin}/plugins/dsh-vendor-hub/auth`, {
   method: 'POST',
   headers: { 'content-type': 'application/json', origin: 'https://evil.example' },
   body: JSON.stringify({ action: 'save', vendor: 'trae-cn', secret: { token: 'x' } }),
 })
 assert.equal(crossOrigin.status, 403, '跨源写入必须 403')
 
-const sameOrigin = await realFetch(`${origin}/plugins/dsh-magpie-connect/settings`, {
+const sameOrigin = await realFetch(`${origin}/plugins/dsh-vendor-hub/settings`, {
   method: 'POST',
   headers: { 'content-type': 'application/json', origin },
   body: JSON.stringify({ autoCheckin: false, checkinMinute: 9 * 60 + 30 }),
@@ -143,7 +143,7 @@ const savedSettings = await sameOrigin.json()
 assert.equal(savedSettings.value.autoCheckin, false)
 assert.equal(savedSettings.value.checkinMinute, 570)
 
-const accountsResponse = await realFetch(`${origin}/plugins/dsh-magpie-connect/accounts`)
+const accountsResponse = await realFetch(`${origin}/plugins/dsh-vendor-hub/accounts`)
 const accountsDoc = await accountsResponse.json()
 assert.equal(accountsDoc.accounts.length, 1)
 assert.ok(!JSON.stringify(accountsDoc).includes('JWT-TEST-TOKEN'), 'accounts 路由不得泄露凭证')

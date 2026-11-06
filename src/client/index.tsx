@@ -1,5 +1,5 @@
 /**
- * Browser half of `dsh-magpie-connect`.
+ * Browser half of `dsh-vendor-hub`.
  *
  * Registers three surfaces and nothing else:
  *   - `sidebar.footer.action`  the allowance card (when the host serves it)
@@ -19,13 +19,13 @@ import { acquire, useConnectStore } from './store.ts'
 import { ensureStyles, removeStyles } from './styles.ts'
 
 /** Stable plugin name, matching the Host half. */
-export const name = 'magpie-connect'
+export const name = 'vendor-hub'
 
 /** Services the browser half needs before it can register. */
 export const inject = ['slots']
 
 /** Key of this bundle's center-column panel. */
-export const PANEL_ID = 'magpie-connect'
+export const PANEL_ID = 'vendor-hub'
 
 /** The card surface: subscribes on its own so it can render without the panel. */
 function SidebarCard(props: { wide: boolean; onOpen: () => void }) {
@@ -41,7 +41,7 @@ function SidebarCard(props: { wide: boolean; onOpen: () => void }) {
 
 export function apply(ctx: ClientContext): void {
   ensureStyles()
-  ctx.effect(() => () => removeStyles(), 'dsh-magpie-connect: styles')
+  ctx.effect(() => () => removeStyles(), 'dsh-vendor-hub: styles')
 
   /** The layout service, once the host offers it. */
   let openPanel: () => void = () => undefined
@@ -67,7 +67,7 @@ export function apply(ctx: ClientContext): void {
   // The sidebar footer card: opened by a press, hidden when the user turns it off.
   ctx.slots.inject('sidebar.footer.action', () =>
     ctx.slots.register(
-      { name: 'sidebar.footer.action', id: PANEL_ID, order: 30, label: () => 'Magpie Connect' } as never,
+      { name: 'sidebar.footer.action', id: PANEL_ID, order: 30, label: () => 'Vendor Hub' } as never,
       (owner: { wide?: boolean } = {}) => <SidebarCard wide={owner.wide !== false} onOpen={openPanel} />,
     ),
   )
@@ -75,7 +75,7 @@ export function apply(ctx: ClientContext): void {
   // A panel entry beside the host's own sidebar entries.
   ctx.slots.inject('sidebar.panellist', () =>
     ctx.slots.register(
-      { name: 'sidebar.panellist', id: PANEL_ID, order: 30, label: () => 'Magpie Connect' } as never,
+      { name: 'sidebar.panellist', id: PANEL_ID, order: 30, label: () => 'Vendor Hub' } as never,
       () => null,
     ),
   )
@@ -83,7 +83,7 @@ export function apply(ctx: ClientContext): void {
   // The same console inside the Plugins surface.
   ctx.slots.inject('settings.plugins.tab', () =>
     ctx.slots.register(
-      { name: 'settings.plugins.tab', id: PANEL_ID, order: 65, label: () => 'Magpie Connect' } as never,
+      { name: 'settings.plugins.tab', id: PANEL_ID, order: 65, label: () => 'Vendor Hub' } as never,
       () => <ConnectPanel />,
     ),
   )

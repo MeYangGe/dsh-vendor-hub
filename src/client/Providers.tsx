@@ -33,13 +33,13 @@ export function Providers(props: ProvidersProps) {
   }
 
   return (
-    <div className="mmp-panel">
-      <div className="mmp-head">
-        <h2 className="mmp-title">供应商</h2>
-        <span className="mmp-sub">{VENDORS.length} 家 · 已保存 {props.accounts.length} 个账号</span>
+    <div className="vdh-panel">
+      <div className="vdh-head">
+        <h2 className="vdh-title">供应商</h2>
+        <span className="vdh-sub">{VENDORS.length} 家 · 已保存 {props.accounts.length} 个账号</span>
       </div>
       {message ? (
-        <div className={message.bad ? 'mmp-error' : 'mmp-ok'} style={{ padding: '4px 0' }}>
+        <div className={message.bad ? 'vdh-error' : 'vdh-ok'} style={{ padding: '4px 0' }}>
           {message.text}
         </div>
       ) : null}
@@ -50,32 +50,32 @@ export function Providers(props: ProvidersProps) {
         // seven forms ready to fill, not seven closed rows.
         const open = openVendor === vendor.id || (openVendor === null && saved.length === 0)
         return (
-          <div className="mmp-block" key={vendor.id}>
-            <div className="mmp-block-head" style={{ cursor: 'pointer' }} onClick={() => setOpenVendor(open ? null : vendor.id)}>
+          <div className="vdh-block" key={vendor.id}>
+            <div className="vdh-block-head" style={{ cursor: 'pointer' }} onClick={() => setOpenVendor(open ? null : vendor.id)}>
               <Glyph text={vendor.glyph} />
-              <span style={{ color: 'var(--mmp-fg)', fontWeight: 600 }}>{vendor.name}</span>
+              <span style={{ color: 'var(--vdh-fg)', fontWeight: 600 }}>{vendor.name}</span>
               <Pill tone="neutral">{vendor.site}</Pill>
               {vendor.checkin ? <Pill tone="accent">支持签到</Pill> : null}
-              <span className="mmp-grow" />
-              <span className="mmp-sub">{saved.length > 0 ? `${saved.length} 个账号` : '未添加'}</span>
+              <span className="vdh-grow" />
+              <span className="vdh-sub">{saved.length > 0 ? `${saved.length} 个账号` : '未添加'}</span>
             </div>
-            <div className="mmp-block-body">
+            <div className="vdh-block-body">
               {saved.map((account) => (
-                <div className="mmp-row" key={account.id}>
-                  <div className="mmp-who">
-                    <div className="mmp-name">
+                <div className="vdh-row" key={account.id}>
+                  <div className="vdh-who">
+                    <div className="vdh-name">
                       {account.label}
                       {account.plan ? <Pill tone="neutral">{account.plan}</Pill> : null}
                       {account.error ? <Pill tone="bad">{account.error.code}</Pill> : null}
                     </div>
-                    <div className="mmp-meta">
+                    <div className="vdh-meta">
                       <span>{account.account || '未标注账号'}</span>
                       <span>id …{account.id.slice(-6)}</span>
                     </div>
                   </div>
                   <button
                     type="button"
-                    className="mmp-btn"
+                    className="vdh-btn"
                     data-variant="danger"
                     disabled={props.busy}
                     onClick={async () => {
@@ -114,7 +114,7 @@ export function Providers(props: ProvidersProps) {
                   }}
                 />
               ) : (
-                <div className="mmp-empty">点击标题展开，粘贴凭证</div>
+                <div className="vdh-empty">点击标题展开，粘贴凭证</div>
               )}
             </div>
           </div>
@@ -185,18 +185,18 @@ function CredentialForm(props: {
   }
 
   return (
-    <div className="mmp-form">
-      <div className="mmp-hint">{hintOf(props.vendor)}</div>
-      <div className="mmp-field">
+    <div className="vdh-form">
+      <div className="vdh-hint">{hintOf(props.vendor)}</div>
+      <div className="vdh-field">
         <label>备注名（可选，只存在本机）</label>
         <input value={label} placeholder="例如：主账号 / 备用" onChange={(event) => setLabel(event.target.value)} />
       </div>
-      <div className="mmp-field">
+      <div className="vdh-field">
         <label>账号标识（可选，便于区分）</label>
         <input value={account} placeholder="邮箱或 uid" onChange={(event) => setAccount(event.target.value)} />
       </div>
       {fields.map((field) => (
-        <div className="mmp-field" key={field.key}>
+        <div className="vdh-field" key={field.key}>
           <label>
             {labelOf(field.labelKey)}
             {field.required ? ' *' : ''}
@@ -211,10 +211,10 @@ function CredentialForm(props: {
           />
         </div>
       ))}
-      <div className="mmp-actions">
+      <div className="vdh-actions">
         <button
           type="button"
-          className="mmp-btn"
+          className="vdh-btn"
           data-variant="primary"
           disabled={props.busy || saving || (browser !== null && browser.state === 'waiting')}
           onClick={() => void beginBrowserLogin()}
@@ -223,7 +223,7 @@ function CredentialForm(props: {
         </button>
         <button
           type="button"
-          className="mmp-btn"
+          className="vdh-btn"
           disabled={props.busy || saving}
           onClick={async () => {
             setSaving(true)
@@ -239,14 +239,14 @@ function CredentialForm(props: {
         >
           {saving ? '保存并校验中…' : '粘贴保存'}
         </button>
-        <button type="button" className="mmp-btn" data-variant="danger" disabled={props.busy} onClick={props.onRemoveVendor}>
+        <button type="button" className="vdh-btn" data-variant="danger" disabled={props.busy} onClick={props.onRemoveVendor}>
           清除该供应商全部凭证
         </button>
       </div>
       {browser !== null ? (
         <div
           className={
-            browser.state === 'saved' ? 'mmp-ok' : browser.state === 'error' ? 'mmp-error' : 'mmp-hint'
+            browser.state === 'saved' ? 'vdh-ok' : browser.state === 'error' ? 'vdh-error' : 'vdh-hint'
           }
         >
           {browserText(browser)}

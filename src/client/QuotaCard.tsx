@@ -67,13 +67,13 @@ function digestOf(status: ConnectStatus): VendorDigest[] {
 export function QuotaCard({ status, wide, onOpen }: QuotaCardProps) {
   const digests = digestOf(status)
   const waiting = claimableAccounts(status).length
-  const title = waiting > 0 ? `${waiting} 个账号今天还没签到` : 'Magpie Connect — 额度与签到'
+  const title = waiting > 0 ? `${waiting} 个账号今天还没签到` : 'Vendor Hub — 额度与签到'
 
   if (!wide) {
     return (
-      <button type="button" className="mmp-root mmp-foot-rail" onClick={onOpen} title={title} aria-label={title}>
+      <button type="button" className="vdh-root vdh-foot-rail" onClick={onOpen} title={title} aria-label={title}>
         M
-        {waiting > 0 ? <span className="mmp-dot" /> : null}
+        {waiting > 0 ? <span className="vdh-dot" /> : null}
       </button>
     )
   }
@@ -85,34 +85,34 @@ export function QuotaCard({ status, wide, onOpen }: QuotaCardProps) {
   const leftSum = digests.reduce<number>((acc, item) => acc + (typeof item.left === 'number' ? item.left : 0), 0)
 
   return (
-    <button type="button" className="mmp-root mmp-foot" onClick={onOpen} title={title}>
-      <span className="mmp-foot-head">
-        <b>Magpie</b>
-        <span className="mmp-grow" />
-        {waiting > 0 ? <span className="mmp-pill" data-tone="warn">签到 {waiting}</span> : null}
-        <span style={{ color: 'var(--mmp-fg-faint)', fontSize: 10 }}>{worst === null ? '—' : `${Math.round(worst)}%`}</span>
+    <button type="button" className="vdh-root vdh-foot" onClick={onOpen} title={title}>
+      <span className="vdh-foot-head">
+        <b>Vendor</b>
+        <span className="vdh-grow" />
+        {waiting > 0 ? <span className="vdh-pill" data-tone="warn">签到 {waiting}</span> : null}
+        <span style={{ color: 'var(--vdh-fg-faint)', fontSize: 10 }}>{worst === null ? '—' : `${Math.round(worst)}%`}</span>
       </span>
-      <span className="mmp-foot-grid">
-        {digests.length === 0 ? <span className="mmp-foot-item">未添加账号</span> : null}
+      <span className="vdh-foot-grid">
+        {digests.length === 0 ? <span className="vdh-foot-item">未添加账号</span> : null}
         {digests.slice(0, 3).map((item) => (
-          <span className="mmp-foot-item" key={item.meta?.id ?? 'unknown'}>
-            <span style={{ width: 14, textAlign: 'center', fontWeight: 700, color: 'var(--mmp-accent)' }}>
+          <span className="vdh-foot-item" key={item.meta?.id ?? 'unknown'}>
+            <span style={{ width: 14, textAlign: 'center', fontWeight: 700, color: 'var(--vdh-accent)' }}>
               {item.meta?.glyph ?? '?'}
             </span>
             <MiniBar percent={item.worst} />
             <span style={{ minWidth: 42, textAlign: 'right' }}>
               {item.left === null ? '—' : formatAmount(item.left)}
             </span>
-            {item.failed > 0 ? <span style={{ color: 'var(--mmp-bad)' }}>!</span> : null}
+            {item.failed > 0 ? <span style={{ color: 'var(--vdh-bad)' }}>!</span> : null}
           </span>
         ))}
-        {digests.length > 3 ? <span className="mmp-foot-item">另 {digests.length - 3} 家</span> : null}
+        {digests.length > 3 ? <span className="vdh-foot-item">另 {digests.length - 3} 家</span> : null}
       </span>
-      <span className="mmp-foot-head" style={{ fontSize: 10 }}>
-        <span style={{ color: 'var(--mmp-fg-faint)' }}>
+      <span className="vdh-foot-head" style={{ fontSize: 10 }}>
+        <span style={{ color: 'var(--vdh-fg-faint)' }}>
           {digests.length > 0 && leftSum > 0 ? `合计 ${formatAmount(leftSum)} Credits` : '点开查看用量概览'}
         </span>
-        <span className="mmp-grow" />
+        <span className="vdh-grow" />
         {status.totals.updatedAt ? <span>{shortStamp(status.totals.updatedAt)}</span> : null}
       </span>
     </button>

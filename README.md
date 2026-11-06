@@ -1,4 +1,4 @@
-# DSH Magpie Connect
+# DSH Vendor Hub
 
 把多家编码套餐供应商的**额度、用量与每日签到**收进 DeepSeek Harness 的一个控制台 —— 侧栏额度卡 + 用量概览 + 签到中心。界面语言与信息层级参考 [magpie](https://github.com/yetone/magpie) 的 Web UI，概览页对齐它的「用量 → 概览」。
 
@@ -15,15 +15,17 @@
 
 ## 支持的供应商与实现状态
 
-诚实标注 —— 未确证的接口一律不猜数字，卡片会直接说明原因：
+诚实标注 —— 上游没有的接口一律不猜数字，卡片会直接说明原因：
 
-| 供应商 | 额度读取 | 每日签到 | 端点依据 |
+| 供应商 | 额度读取 | 每日签到 | 浏览器登录 |
 |---|---|---|---|
-| Qoder 国内版 / 国际版 | ✗ 额度查询接口无公开契约，**不猜额度**；签到与活动奖励可用 | ✓ `me/campaigns` + `{id}/claim` | magpie `internal/provider/qoder_checkin.go` |
-| WorkBuddy 国内版 / 国际版 | △ `billing/meter/get-user-resource-summary`（字段按候选键解析，读不出会给出原始片段） | ✗ 由 magpie 的 `@magpie-community/opencode-workbuddy-auth` 负责，本插件不复刻其未公开端点 | magpie `workbuddy_checkin.go` |
-| Trae 国内版 | ✓ `pay/ide_user_ent_usage` | ✓ `ug/checkin_credits/status` + `/claim` | magpie `packages/trae` |
-| ZCode（GLM 编码套餐） | △ `api/biz/subscription/list`（拿到套餐与有效期；上游若不给额度数则如实标注） | ✗ 由 magpie 每 30 分钟复查赠送计划 | magpie `packages/zcode` |
-| CodeArts（华为云码道） | ✗ 积分批次接口路径未公开 | ✓ `ops/delivery` + `ops/claim` + `ops/confirm`（SDK-HMAC-SHA256 签名） | magpie `packages/codearts` |
+| **Qoder 国内版 / 国际版** | ✅ `sash/api/v2/me/usage`（实测 `personal_standard` + Credits/Add-on credits 两个池） | ✅ `me/campaigns` + `{id}/claim` | ✅ PKCE device flow：`device/selectAccounts` → `deviceToken/poll` → `me/jobToken` |
+| **WorkBuddy 国内版 / 国际版** | ⚠️ 汇总 + `paid-packages` + `free-packages` 三个端点全接；但**免费账号上游一个数字都不报**（三个端点都 200 且 `Accounts: []`），界面如实说明 | ✗ 由 magpie 的 `opencode-workbuddy-auth` 负责 | ✅ `plugin/auth/state` 拿 `authUrl` → 轮询 `plugin/auth/token?state=` |
+| **Trae 国内版** | △ `pay/ide_user_ent_usage` | ✅ `ug/checkin_credits/status` + `/claim` | ✅ 回环 `127.0.0.1/authorize`，页面回传 `userJwt` + `refreshToken` |
+| **ZCode（GLM 编码套餐）** | △ `api/biz/subscription/list` | ✗ 由 magpie 每 30 分钟复查 | ✅ `oauth/cli/init` → 轮询 `oauth/cli/poll/{flow_id}` |
+| **CodeArts（华为云码道）** | ✗ 积分批次接口路径未公开 | ✅ `ops/delivery` + `ops/claim` + `ops/confirm`（SDK-HMAC-SHA256） | ⛔ 待移植（PKCE + DPoP + 华为云 STS） |
+
+浏览器登录的端点、参数名与请求头**逐条取自服务器上正在运行的 magpie 插件源码**（`@magpie-community/opencode-*-auth`），不是猜的；对应关系见 `结果/magpie插件构造对照.md`。
 
 规则：**能读到就读，读不到就说清楚缺什么**，绝不显示编出来的数字。
 
@@ -31,16 +33,16 @@
 
 ```bash
 # 在 DSH 里（桌面端 plugins 页或 CLI）
-dsh plugin --profile desktop add github:<你的账号>/dsh-magpie-connect
+dsh plugin --profile desktop add github:<你的账号>/dsh-vendor-hub
 # 或本地目录
-dsh plugin --profile desktop add D:/dsh-magpie-connect
+dsh plugin --profile desktop add D:/dsh-vendor-hub
 ```
 
 插件声明了 `dsh.bundle.patch`，安装时自动挂载 `cordis.patch.yml`；无 LLM provider，不需要改默认模型。
 
 ## 数据落盘
 
-全部在 `<DSH_HOME>/magpie-connect/`（可用 `DSH_MAGPIE_CONNECT_DATA_DIR` 覆盖）：
+全部在 `<DSH_HOME>/vendor-hub/`（可用 `DSH_VENDOR_HUB_DATA_DIR` 覆盖）：
 
 | 文件 | 内容 |
 |---|---|
@@ -61,19 +63,19 @@ src/
     http.ts             有界请求 + 供应商错误分类
     store.ts            凭证本 / 设置 / 缓存 / 日志
     engine.ts           额度读取、签到执行、状态文档、时区换算
-    routes.ts           7 条 HTTP 路由（写操作同源校验）
+    routes.ts           10 条 HTTP 路由（写操作同源校验）
   providers/
     base.ts             适配器契约
     qoder.ts  workbuddy.ts  trae.ts  zcode.ts  codearts.ts
   client/
     index.tsx           注册 slots：sidebar.footer.action / main / settings.plugins.tab
     store.ts            共享状态 + 单一轮询（页面隐藏时暂停）
-    styles.ts           magpie 风格样式表（mmp- 前缀）
+    styles.ts           magpie 风格样式表（vdh- 前缀）
     Panel.tsx  Overview.tsx  Providers.tsx  Checkin.tsx  QuotaCard.tsx
     parts.tsx           进度条 / 状态胶囊 / 供应商徽记
 tests/
   smoke.mjs             源码级端到端：账号 / 额度解析 / 签到幂等 / 路由 / 时区
-  host-load.mjs         构建产物级：按宿主契约加载 lib/index.js 并跑 7 条路由
+  host-load.mjs         构建产物级：按宿主契约加载 lib/index.js 并跑 10 条路由
 ```
 
 ## 开发

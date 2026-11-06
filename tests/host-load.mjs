@@ -14,13 +14,13 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import assert from 'node:assert/strict'
 
-const dir = mkdtempSync(join(tmpdir(), 'mmp-host-'))
-process.env['DSH_MAGPIE_CONNECT_DATA_DIR'] = dir
+const dir = mkdtempSync(join(tmpdir(), 'vdh-host-'))
+process.env['DSH_VENDOR_HUB_DATA_DIR'] = dir
 
 const mod = await import('../lib/index.js')
 
 assert.equal(typeof mod.apply, 'function', 'bundle 应导出 apply')
-assert.equal(mod.name, 'magpie-connect')
+assert.equal(mod.name, 'vendor-hub')
 assert.ok(!JSON.stringify(mod.inject).includes('react'), 'host 半侧不应依赖 react')
 
 const routes = []
@@ -53,7 +53,7 @@ mod.apply(ctx)
 assert.equal(routes.length, 10, `应挂载 7 条路由，实际 ${routes.length}：${routes.map((r) => r.path).join(', ')}`)
 for (const route of routes) {
   assert.equal(route.kind, 'exact', '路由必须是 exact')
-  assert.ok(route.path.startsWith('/plugins/dsh-magpie-connect/'), route.path)
+  assert.ok(route.path.startsWith('/plugins/dsh-vendor-hub/'), route.path)
 }
 assert.ok(logs.some(([level]) => level === 'info'), '应留下挂载日志')
 
@@ -70,7 +70,7 @@ await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve))
 const port = server.address().port
 const origin = `http://127.0.0.1:${port}`
 
-const status = await fetch(`${origin}/plugins/dsh-magpie-connect/status`)
+const status = await fetch(`${origin}/plugins/dsh-vendor-hub/status`)
 assert.equal(status.status, 200)
 const doc = await status.json()
 assert.equal(doc.schema, 1)
@@ -79,18 +79,18 @@ assert.deepEqual(doc.accounts, [], '空账本应返回空账号列表')
 assert.equal(doc.problems.length, 0, '空账本不应在 problems 里重复引导')
 assert.equal(doc.scheduler.enabled, true, '默认开启自动签到')
 
-const settings = await fetch(`${origin}/plugins/dsh-magpie-connect/settings`)
+const settings = await fetch(`${origin}/plugins/dsh-vendor-hub/settings`)
 const settingsDoc = await settings.json()
 assert.equal(settingsDoc.value.pollMs, 300_000)
 
-const bad = await fetch(`${origin}/plugins/dsh-magpie-connect/auth`, {
+const bad = await fetch(`${origin}/plugins/dsh-vendor-hub/auth`, {
   method: 'POST',
   headers: { 'content-type': 'application/json', origin: 'https://evil.example' },
   body: '{}',
 })
 assert.equal(bad.status, 403, '跨源写入必须 403')
 
-const unknown = await fetch(`${origin}/plugins/dsh-magpie-connect/auth`, {
+const unknown = await fetch(`${origin}/plugins/dsh-vendor-hub/auth`, {
   method: 'POST',
   headers: { 'content-type': 'application/json', origin: origin },
   body: JSON.stringify({ action: 'save', vendor: 'nope', secret: { token: 'x' } }),

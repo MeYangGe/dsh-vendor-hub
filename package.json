@@ -1,6 +1,6 @@
 {
-  "name": "dsh-magpie-connect",
-  "displayName": "DSH Magpie Connect",
+  "name": "dsh-vendor-hub",
+  "displayName": "DSH Vendor Hub",
   "description": "聚合多家编码套餐供应商（Qoder / WorkBuddy / Trae CN / ZCode / CodeArts）的额度、用量与每日签到 —— DSH 侧栏额度卡 + 用量概览 + 签到中心。",
   "version": "0.1.0",
   "author": "meyangge",

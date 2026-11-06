@@ -1,6 +1,6 @@
 import { Context } from "@deepseek-ai/cordis";
 /**
- * Contract shared by the Host and browser halves of `dsh-magpie-connect`.
+ * Contract shared by the Host and browser halves of `dsh-vendor-hub`.
  *
  * Node-free on purpose: the browser bundle imports this file directly, so it
  * may hold shapes, string literals and pure helpers only.
@@ -143,7 +143,7 @@ interface EngineOptions {
 }
 /** Assemble the status document the browser half polls. */
 declare function buildStatus(options: EngineOptions, scheduler: ConnectStatus['scheduler']): ConnectStatus;
-declare const name = "magpie-connect";
+declare const name = "vendor-hub";
 /** The services this plugin needs before it can mount its routes. */
 declare const inject: readonly ["webServer"];
 /** Bumped with every release; the panel shows it in its footer. */

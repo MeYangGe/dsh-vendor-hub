@@ -2,8 +2,8 @@
  * The centre panel: three tabs over one store, and the single place that turns
  * a press into a Host request while keeping the whole panel disabled mid-flight.
  *
- * Layout contract: `.mmp-shell` owns the height, `.mmp-header` is fixed, and
- * `.mmp-scroll` is the only scroller. A content pane must never set its own
+ * Layout contract: `.vdh-shell` owns the height, `.vdh-header` is fixed, and
+ * `.vdh-scroll` is the only scroller. A content pane must never set its own
  * height - doing that pushed every page below the fold (the blank-panel defect).
  */
 
@@ -63,20 +63,20 @@ export function ConnectPanel() {
   const settingsValue: ConnectSettings | null = settings?.value ?? null
 
   return (
-    <div className="mmp-root mmp-shell">
-      <div className="mmp-header">
-        <h2 className="mmp-title">Magpie Connect</h2>
-        <span className="mmp-sub">多供应商额度 · 用量 · 每日签到</span>
-        <span className="mmp-pill" data-tone="neutral">
+    <div className="vdh-root vdh-shell">
+      <div className="vdh-header">
+        <h2 className="vdh-title">Vendor Hub</h2>
+        <span className="vdh-sub">多供应商额度 · 用量 · 每日签到</span>
+        <span className="vdh-pill" data-tone="neutral">
           {PANEL_BUILD}
         </span>
-        <span className="mmp-grow" />
-        <div className="mmp-segs">
+        <span className="vdh-grow" />
+        <div className="vdh-segs">
           {TABS.map((entry) => (
             <button
               key={entry.id}
               type="button"
-              className="mmp-seg"
+              className="vdh-seg"
               data-on={tab === entry.id ? '1' : '0'}
               onClick={() => setTab(entry.id)}
             >
@@ -86,20 +86,20 @@ export function ConnectPanel() {
         </div>
         <button
           type="button"
-          className="mmp-btn"
+          className="vdh-btn"
           disabled={busy}
           onClick={() => void run(async () => void (await loadStatus()))}
         >
           刷新
         </button>
       </div>
-      {failure ? <div className="mmp-error">读取状态失败：{failure}</div> : null}
-      {notice ? <div className="mmp-error">{notice}</div> : null}
+      {failure ? <div className="vdh-error">读取状态失败：{failure}</div> : null}
+      {notice ? <div className="vdh-error">{notice}</div> : null}
 
-      <div className="mmp-scroll">
+      <div className="vdh-scroll">
         {status === null || settingsValue === null ? (
-          <div className="mmp-panel">
-            <div className="mmp-empty">
+          <div className="vdh-panel">
+            <div className="vdh-empty">
               {failure ? '读取失败，点右上角「刷新」重试。' : '正在读取插件状态…'}
             </div>
           </div>

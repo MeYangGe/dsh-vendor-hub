@@ -35,51 +35,51 @@ export function Overview(props: OverviewProps) {
   const hiddenAccounts = status.accounts.filter((account) => hiddenSet.has(account.id))
 
   return (
-    <div className="mmp-panel">
-      <div className="mmp-head">
-        <h2 className="mmp-title">用量概览</h2>
-        <span className="mmp-sub">{status.accounts.length} 个账号 · {totals.vendors} 家供应商</span>
-        <span className="mmp-grow" />
-        <button type="button" className="mmp-btn" disabled={props.busy} onClick={props.onRefreshAll}>
+    <div className="vdh-panel">
+      <div className="vdh-head">
+        <h2 className="vdh-title">用量概览</h2>
+        <span className="vdh-sub">{status.accounts.length} 个账号 · {totals.vendors} 家供应商</span>
+        <span className="vdh-grow" />
+        <button type="button" className="vdh-btn" disabled={props.busy} onClick={props.onRefreshAll}>
           {props.busy ? '刷新中…' : '全部刷新'}
         </button>
-        <button type="button" className="mmp-btn" data-variant="primary" disabled={props.busy} onClick={props.onCheckinAll}>
+        <button type="button" className="vdh-btn" data-variant="primary" disabled={props.busy} onClick={props.onCheckinAll}>
           全部签到
         </button>
       </div>
 
-      <div className="mmp-tiles">
-        <div className="mmp-tile">
+      <div className="vdh-tiles">
+        <div className="vdh-tile">
           <b>{totals.creditsLeft === null ? '—' : formatAmount(totals.creditsLeft)}</b>
           <span>剩余 Credits</span>
           <small>{totals.creditsTotal === null ? '上游未给总额' : `共 ${formatAmount(totals.creditsTotal)}`}</small>
         </div>
-        <div className="mmp-tile">
+        <div className="vdh-tile">
           <b>{totals.signedIn}</b>
           <span>已保存账号</span>
           <small>{totals.readOk} 个读数成功 · {totals.readFailed} 个失败</small>
         </div>
-        <div className="mmp-tile">
+        <div className="vdh-tile">
           <b>{totals.checkinClaimable}</b>
           <span>今日可签到</span>
           <small>{claimable.length > 0 ? claimable.map((account) => account.label).join('、') : '没有待领取的'}</small>
         </div>
-        <div className="mmp-tile">
+        <div className="vdh-tile">
           <b>{totals.checkinClaimed}</b>
           <span>今日已签</span>
           <small>{totals.checkinFailed > 0 ? `${totals.checkinFailed} 个失败` : '无失败'}</small>
         </div>
       </div>
 
-      <div className="mmp-block">
-        <div className="mmp-block-head">
+      <div className="vdh-block">
+        <div className="vdh-block-head">
           <span>账号额度</span>
-          <span className="mmp-grow" />
-          <span className="mmp-sub">{status.totals.updatedAt ? `更新于 ${stamp(status.totals.updatedAt)}` : '尚未读取'}</span>
+          <span className="vdh-grow" />
+          <span className="vdh-sub">{status.totals.updatedAt ? `更新于 ${stamp(status.totals.updatedAt)}` : '尚未读取'}</span>
         </div>
-        <div className="mmp-block-body">
+        <div className="vdh-block-body">
           {visible.length === 0 ? (
-            <div className="mmp-empty">
+            <div className="vdh-empty">
               还没有账号。去「供应商」页粘贴第一份凭证 —— 保存时会立刻读一次额度。
             </div>
           ) : (
@@ -101,21 +101,21 @@ export function Overview(props: OverviewProps) {
       </div>
 
       {hiddenAccounts.length > 0 ? (
-        <div className="mmp-block">
-          <div className="mmp-block-head">
+        <div className="vdh-block">
+          <div className="vdh-block-head">
             <span>已从概览隐藏（{hiddenAccounts.length}）</span>
-            <span className="mmp-grow" />
-            <span className="mmp-sub">仍然照常读取与签到</span>
+            <span className="vdh-grow" />
+            <span className="vdh-sub">仍然照常读取与签到</span>
           </div>
-          <div className="mmp-block-body">
+          <div className="vdh-block-body">
             {hiddenAccounts.map((account) => (
-              <div className="mmp-row" key={account.id}>
+              <div className="vdh-row" key={account.id}>
                 <Glyph text={vendorMeta(account.vendor)?.glyph ?? '?'} />
-                <div className="mmp-who">
-                  <div className="mmp-name">{account.label}</div>
-                  <div className="mmp-meta">{vendorMeta(account.vendor)?.name ?? account.vendor}</div>
+                <div className="vdh-who">
+                  <div className="vdh-name">{account.label}</div>
+                  <div className="vdh-meta">{vendorMeta(account.vendor)?.name ?? account.vendor}</div>
                 </div>
-                <button type="button" className="mmp-btn" onClick={() => props.onToggleHidden(account.id, false)}>
+                <button type="button" className="vdh-btn" onClick={() => props.onToggleHidden(account.id, false)}>
                   取消隐藏
                 </button>
               </div>
@@ -125,19 +125,19 @@ export function Overview(props: OverviewProps) {
       ) : null}
 
       {status.log.length > 0 ? (
-        <div className="mmp-block">
-          <div className="mmp-block-head">
+        <div className="vdh-block">
+          <div className="vdh-block-head">
             <span>签到记录</span>
-            <span className="mmp-grow" />
-            <span className="mmp-sub">最近 {Math.min(status.log.length, 12)} 条</span>
+            <span className="vdh-grow" />
+            <span className="vdh-sub">最近 {Math.min(status.log.length, 12)} 条</span>
           </div>
-          <div className="mmp-log">
+          <div className="vdh-log">
             {status.log.slice(0, 12).map((entry, index) => (
               <div key={`${entry.at}-${index}`}>
                 <time>{stamp(entry.at, true)}</time>
                 <span>{entry.account}</span>
                 <span>{CHECKIN_OUTCOME_LABEL[entry.outcome] ?? entry.outcome}</span>
-                <span className="mmp-sub">{entry.message}</span>
+                <span className="vdh-sub">{entry.message}</span>
               </div>
             ))}
           </div>
@@ -145,13 +145,13 @@ export function Overview(props: OverviewProps) {
       ) : null}
 
       {status.problems.length > 0 ? (
-        <div className="mmp-block">
-          <div className="mmp-block-head">
+        <div className="vdh-block">
+          <div className="vdh-block-head">
             <span>需要处理</span>
           </div>
-          <div className="mmp-block-body">
+          <div className="vdh-block-body">
             {status.problems.map((problem, index) => (
-              <div key={index} className="mmp-error">
+              <div key={index} className="vdh-error">
                 {problem}
               </div>
             ))}
@@ -187,17 +187,17 @@ function AccountRow(props: {
           : 'neutral'
   return (
     <>
-      <div className="mmp-row" style={{ cursor: 'pointer' }} onClick={props.onToggleOpen}>
+      <div className="vdh-row" style={{ cursor: 'pointer' }} onClick={props.onToggleOpen}>
         <Glyph text={meta?.glyph ?? '?'} />
-        <div className="mmp-who">
-          <div className="mmp-name">
+        <div className="vdh-who">
+          <div className="vdh-name">
             {account.label}
             <Pill tone="neutral">{meta?.name ?? account.vendor}</Pill>
             {account.plan ? <Pill tone="neutral">{account.plan}</Pill> : null}
             {checkin ? <Pill tone={checkinTone}>{CHECKIN_OUTCOME_LABEL[checkin.outcome] ?? checkin.outcome}</Pill> : null}
             {account.error ? <Pill tone="bad">{account.error.code}</Pill> : null}
           </div>
-          <div className="mmp-meta">
+          <div className="vdh-meta">
             <span>{account.account || '未标注账号'}</span>
             {account.quota?.windows.length ? (
               <span>
@@ -216,23 +216,23 @@ function AccountRow(props: {
           </div>
         </div>
         <MiniBar percent={worst} />
-        <div className="mmp-num">
-          <b style={{ color: tone === 'bad' ? 'var(--mmp-bad)' : tone === 'warn' ? 'var(--mmp-warn)' : undefined }}>
+        <div className="vdh-num">
+          <b style={{ color: tone === 'bad' ? 'var(--vdh-bad)' : tone === 'warn' ? 'var(--vdh-warn)' : undefined }}>
             {worst === null ? '—' : `${Math.round(worst)}%`}
           </b>
           <small>剩余</small>
         </div>
       </div>
       {props.open ? (
-        <div className="mmp-bar-group" style={{ padding: '0 14px 12px' }}>
+        <div className="vdh-bar-group" style={{ padding: '0 14px 12px' }}>
           {account.quota?.windows.length ? (
-            <div className="mmp-bars" style={{ padding: 0 }}>
+            <div className="vdh-bars" style={{ padding: 0 }}>
               {account.quota.windows.map((window, index) => (
                 <Bar key={`${window.name}-${index}`} window={window} />
               ))}
             </div>
           ) : (
-            <div className="mmp-bar-note">
+            <div className="vdh-bar-note">
               {account.error
                 ? account.error.message
                 : account.quota != null
@@ -242,30 +242,30 @@ function AccountRow(props: {
                   : '这个账号还没有成功读取过额度。'}
             </div>
           )}
-          <div className="mmp-actions" style={{ marginTop: 10 }}>
-            <button type="button" className="mmp-btn" disabled={props.busy} onClick={props.onRefresh}>
+          <div className="vdh-actions" style={{ marginTop: 10 }}>
+            <button type="button" className="vdh-btn" disabled={props.busy} onClick={props.onRefresh}>
               读取额度
             </button>
             <button
               type="button"
-              className="mmp-btn"
+              className="vdh-btn"
               data-variant="primary"
               disabled={props.busy || !account.checkinOn}
               onClick={props.onCheckin}
             >
               立即签到
             </button>
-            <label className="mmp-field" style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <label className="vdh-field" style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <input
                 type="checkbox"
                 checked={account.checkinOn}
                 onChange={(event) => props.onToggleCheckin(event.target.checked)}
               />
-              <span className="mmp-hint">自动签到</span>
+              <span className="vdh-hint">自动签到</span>
             </label>
-            {account.ms ? <span className="mmp-hint">上次读数 {account.ms} ms</span> : null}
-            <span className="mmp-grow" />
-            <button type="button" className="mmp-btn" onClick={props.onHide}>
+            {account.ms ? <span className="vdh-hint">上次读数 {account.ms} ms</span> : null}
+            <span className="vdh-grow" />
+            <button type="button" className="vdh-btn" onClick={props.onHide}>
               从概览隐藏
             </button>
           </div>

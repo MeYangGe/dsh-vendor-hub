@@ -1,5 +1,5 @@
 /**
- * Contract shared by the Host and browser halves of `dsh-magpie-connect`.
+ * Contract shared by the Host and browser halves of `dsh-vendor-hub`.
  *
  * Node-free on purpose: the browser bundle imports this file directly, so it
  * may hold shapes, string literals and pure helpers only.
@@ -229,7 +229,7 @@ export const POLL_MIN_MS = 60_000
 export const POLL_DEFAULT_MS = 300_000
 
 /** Base path of the plugin's own HTTP surface, shared by both halves. */
-export const ROUTE_BASE = '/plugins/dsh-magpie-connect'
+export const ROUTE_BASE = '/plugins/dsh-vendor-hub'
 
 /** Human label per check-in outcome, used by the log and the cards. */
 export const CHECKIN_OUTCOME_LABEL: Record<CheckinOutcome, string> = {

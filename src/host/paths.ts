@@ -1,8 +1,8 @@
 /**
  * Where the plugin keeps its files.
  *
- * One directory, never loose files: `DSH_MAGPIE_CONNECT_DATA_DIR` when set,
- * else `<DSH_HOME>/magpie-connect`, else `<user config>/dsh-magpie-connect`.
+ * One directory, never loose files: `DSH_VENDOR_HUB_DATA_DIR` when set,
+ * else `<DSH_HOME>/vendor-hub`, else `<user config>/dsh-vendor-hub`.
  * The directory holds the account book (credentials), the settings file, the
  * quota/check-in cache and the rolling check-in log.
  */
@@ -11,7 +11,7 @@ import { chmodSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'n
 import { dirname, join, resolve } from 'node:path'
 import { homedir } from 'node:os'
 
-export const DATA_DIR_ENV = 'DSH_MAGPIE_CONNECT_DATA_DIR'
+export const DATA_DIR_ENV = 'DSH_VENDOR_HUB_DATA_DIR'
 
 let cachedDir: string | undefined
 
@@ -24,8 +24,8 @@ export function dataDir(): string {
     override && override.length > 0
       ? resolve(override)
       : dshHome && dshHome.length > 0
-        ? join(resolve(dshHome), 'magpie-connect')
-        : join(homedir(), '.config', 'dsh-magpie-connect')
+        ? join(resolve(dshHome), 'vendor-hub')
+        : join(homedir(), '.config', 'dsh-vendor-hub')
   mkdirSync(base, { recursive: true })
   cachedDir = base
   return base

@@ -21,23 +21,23 @@ const here = dirname(fileURLToPath(import.meta.url))
 const body = `
 <h2>fixed host height (600px), OLD structure - header pane claims height:100%</h2>
 <div class="host" data-case="old">
-  <div class="mmp-root">
-    <div class="mmp-panel mmp-legacy"><div class="mmp-head"><b>Magpie Connect</b> tabs 刷新</div></div>
-    <div class="mmp-panel" id="old-body">
-      <div class="mmp-tiles"><div class="mmp-tile"><b>—</b><span>剩余 Credits</span></div></div>
-      <div class="mmp-block"><div class="mmp-block-head">账号额度</div></div>
+  <div class="vdh-root">
+    <div class="vdh-panel vdh-legacy"><div class="vdh-head"><b>Vendor Hub</b> tabs 刷新</div></div>
+    <div class="vdh-panel" id="old-body">
+      <div class="vdh-tiles"><div class="vdh-tile"><b>—</b><span>剩余 Credits</span></div></div>
+      <div class="vdh-block"><div class="vdh-block-head">账号额度</div></div>
     </div>
   </div>
 </div>
 
 <h2>fixed host height (600px), NEW structure - shell owns height, body scrolls</h2>
 <div class="host" data-case="new">
-  <div class="mmp-root mmp-shell">
-    <div class="mmp-header"><div class="mmp-head"><b>Magpie Connect</b> tabs 刷新</div></div>
-    <div class="mmp-scroll" id="new-scroll">
-      <div class="mmp-panel" id="new-body">
-        <div class="mmp-tiles"><div class="mmp-tile"><b>—</b><span>剩余 Credits</span></div></div>
-        <div class="mmp-block"><div class="mmp-block-head">账号额度</div></div>
+  <div class="vdh-root vdh-shell">
+    <div class="vdh-header"><div class="vdh-head"><b>Vendor Hub</b> tabs 刷新</div></div>
+    <div class="vdh-scroll" id="new-scroll">
+      <div class="vdh-panel" id="new-body">
+        <div class="vdh-tiles"><div class="vdh-tile"><b>—</b><span>剩余 Credits</span></div></div>
+        <div class="vdh-block"><div class="vdh-block-head">账号额度</div></div>
       </div>
     </div>
   </div>
@@ -45,12 +45,12 @@ const body = `
 
 <h2>height:auto host, NEW structure - must not collapse</h2>
 <div class="host host-auto" data-case="new-auto">
-  <div class="mmp-root mmp-shell">
-    <div class="mmp-header"><div class="mmp-head"><b>Magpie Connect</b> tabs 刷新</div></div>
-    <div class="mmp-scroll" id="auto-scroll">
-      <div class="mmp-panel" id="auto-body">
-        <div class="mmp-tiles"><div class="mmp-tile"><b>—</b><span>剩余 Credits</span></div></div>
-        <div class="mmp-block"><div class="mmp-block-head">账号额度</div></div>
+  <div class="vdh-root vdh-shell">
+    <div class="vdh-header"><div class="vdh-head"><b>Vendor Hub</b> tabs 刷新</div></div>
+    <div class="vdh-scroll" id="auto-scroll">
+      <div class="vdh-panel" id="auto-body">
+        <div class="vdh-tiles"><div class="vdh-tile"><b>—</b><span>剩余 Credits</span></div></div>
+        <div class="vdh-block"><div class="vdh-block-head">账号额度</div></div>
       </div>
     </div>
   </div>
@@ -60,7 +60,7 @@ const body = `
 <script>
   // The old stylesheet, reproduced only for the comparison case.
   const legacy = document.createElement('style');
-  legacy.textContent = '.mmp-legacy{height:100%;overflow:auto}';
+  legacy.textContent = '.vdh-legacy{height:100%;overflow:auto}';
   document.head.appendChild(legacy);
 
   function measure(host, bodyId) {

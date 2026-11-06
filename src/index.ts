@@ -1,12 +1,12 @@
 /**
- * Host half of `dsh-magpie-connect`.
+ * Host half of `dsh-vendor-hub`.
  *
  * Owns no LLM provider: model routing stays with whichever gateway provider the
  * profile already configured. This bundle supplies the multi-vendor console -
  * the account book, the quota reads, the daily check-in sweep and the HTTP
  * routes its own browser half calls.
  *
- * @module dsh-magpie-connect
+ * @module dsh-vendor-hub
  */
 
 import type { Context } from '@deepseek-ai/cordis'
@@ -17,7 +17,7 @@ import { buildStatus, checkinAll, nextCheckinAt, refreshAll, shanghaiDay, shangh
 import { listAccounts, loadSettings } from './host/store.ts'
 import { closeAllLogins } from './host/browser-login.ts'
 
-export const name = 'magpie-connect'
+export const name = 'vendor-hub'
 
 /** The services this plugin needs before it can mount its routes. */
 export const inject = ['webServer'] as const
@@ -93,12 +93,12 @@ export function apply(ctx: Context): void {
     }
     running = true
     try {
-      logger.info(`dsh-magpie-connect: 开始每日签到（北京时间 ${formatMinute(settings.checkinMinute)}）`)
+      logger.info(`dsh-vendor-hub: 开始每日签到（北京时间 ${formatMinute(settings.checkinMinute)}）`)
       await checkinAll(options)
       state.lastAt = new Date().toISOString()
-      logger.info('dsh-magpie-connect: 每日签到完成')
+      logger.info('dsh-vendor-hub: 每日签到完成')
     } catch (error) {
-      logger.warn(`dsh-magpie-connect: 每日签到异常 - ${(error as Error).message}`)
+      logger.warn(`dsh-vendor-hub: 每日签到异常 - ${(error as Error).message}`)
     } finally {
       running = false
       state.nextAt = new Date(target + 86_400_000).toISOString()
@@ -111,7 +111,7 @@ export function apply(ctx: Context): void {
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
   }
 
-  ctx.effect(() => () => closeAllLogins(), 'dsh-magpie-connect: browser logins')
+  ctx.effect(() => () => closeAllLogins(), 'dsh-vendor-hub: browser logins')
 
   ctx.effect(() => {
     timer = setInterval(() => {
@@ -126,12 +126,12 @@ export function apply(ctx: Context): void {
       clearInterval(timer)
       clearTimeout(firstRead)
     }
-  }, 'dsh-magpie-connect: scheduler')
+  }, 'dsh-vendor-hub: scheduler')
 
   ctx.inject(['webServer'], (scoped: any) => {
     const server = scoped.webServer as { register(route: unknown): () => void }
     if (server === undefined || typeof server.register !== 'function') {
-      logger.warn('dsh-magpie-connect: 宿主没有提供 webServer，面板将无法读取状态')
+      logger.warn('dsh-vendor-hub: 宿主没有提供 webServer，面板将无法读取状态')
       return
     }
     const routes = mountRoutes({
@@ -140,9 +140,9 @@ export function apply(ctx: Context): void {
       reschedule,
     })
     for (const route of routes) {
-      ctx.effect(() => server.register(route) as () => void, `dsh-magpie-connect: ${route.path}`)
+      ctx.effect(() => server.register(route) as () => void, `dsh-vendor-hub: ${route.path}`)
     }
-    logger.info(`dsh-magpie-connect: 已挂载 ${routes.length} 条路由于 ${ROUTE_BASE}`)
+    logger.info(`dsh-vendor-hub: 已挂载 ${routes.length} 条路由于 ${ROUTE_BASE}`)
   })
 }
 

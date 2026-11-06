@@ -1,7 +1,7 @@
-# Register the Magpie Connect bundle. It owns no LLM provider of its own:
+# Register the Vendor Hub bundle. It owns no LLM provider of its own:
 # model routing stays with the gateway provider already configured in this
 # profile, while this bundle supplies the multi-vendor quota, usage and
 # daily check-in console (sidebar card + center panel + settings card).
 - insert:
-    - id: magpie-connect
-      name: dsh-magpie-connect
+    - id: vendor-hub
+      name: dsh-vendor-hub

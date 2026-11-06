@@ -13,7 +13,7 @@ const args = process.argv.slice(2)
 const portIndex = args.indexOf('--port')
 const port = portIndex >= 0 && args[portIndex + 1] ? args[portIndex + 1] : '55444'
 const base = `http://127.0.0.1:${port}`
-const route = '/plugins/dsh-magpie-connect/status'
+const route = '/plugins/dsh-vendor-hub/status'
 
 async function main() {
   let response
@@ -28,8 +28,8 @@ async function main() {
 
   if (response.status === 404) {
     console.log(`✗ ${base}${route} → 404：路由没有挂上，插件未被加载。`)
-    console.log('  检查：profiles/desktop/package.json 的 dependencies + dsh.profile.bundles 是否含 dsh-magpie-connect，')
-    console.log('        以及 node_modules/dsh-magpie-connect 是否已链接（pnpm install 是否成功）。')
+    console.log('  检查：profiles/desktop/package.json 的 dependencies + dsh.profile.bundles 是否含 dsh-vendor-hub，')
+    console.log('        以及 node_modules/dsh-vendor-hub 是否已链接（pnpm install 是否成功）。')
     console.log('  改完需要重启桌面端。')
     process.exitCode = 1
     return

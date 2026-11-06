@@ -3,3 +3,4 @@ node_modules/
 .DS_Store
 tests/layout.html
 tests/layout-dom.html
+reference/
