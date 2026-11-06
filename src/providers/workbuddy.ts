@@ -58,6 +58,137 @@ function siteOf(vendor: VendorId): Site {
   return site
 }
 
+/** POST one billing/meter endpoint; the envelope is `{code,msg,data}`. */
+async function postMeter(
+  account: AccountRecord,
+  vendor: VendorId,
+  path: string,
+  body: Record<string, unknown>,
+): Promise<Record<string, unknown>> {
+  const site = siteOf(vendor)
+  const result = await requestRaw(`${site.endpoint}${path}`, {
+    method: 'POST',
+    headers: headers(account, site),
+    body: JSON.stringify(body),
+  })
+  if (!result.ok) {
+    throw new AdapterFailure({
+      code: result.status === 401 || result.status === 403 ? 'unauthorized' : 'unknown',
+      message: `WorkBuddy ${path} 读取失败：HTTP ${result.status} ${result.text.slice(0, 200)}`,
+    })
+  }
+  const root = asRecord(result.json)
+  const data = asRecord(root['data'] ?? root['result'] ?? root)
+  return Object.keys(data).length > 0 ? data : root
+}
+
+// The packages' codes, exactly as WorkBuddy's own client lists them; the API
+// refuses a package detail request without them (10001 "PackageCodes required").
+const CODE = (index: string, salt: string): string => `TCACA_code_${index}_${salt}`
+const DAILY_CODE = CODE('001', 'PqouKr6QWV')
+const PAID_CODES = [
+  CODE('002', 'AkiJS3ZHF5'),
+  CODE('005', 'maRGyrHhw1'),
+  CODE('003', 'FAnt7lcmRT'),
+  CODE('023', '4xbGhMrE6q'),
+  CODE('026', 'BaESVICNoi'),
+  CODE('027', '0FCGVA6vSa'),
+  CODE('043', '6oIkxT7Z0S'),
+  CODE('009', '0XmEQc2xOf'),
+  CODE('038', 'OhvqZtiPKr'),
+  CODE('036', 'lupO5WgNdG'),
+]
+const FREE_CODES = [
+  DAILY_CODE,
+  CODE('008', 'cfWoLwvjU4'),
+  CODE('035', 'ArVxJcGDsm'),
+  CODE('006', 'DbXS0lrypC'),
+  CODE('039', 'KRcQj7wUat'),
+  CODE('040', 'mi9rCYg46x'),
+  CODE('007', 'nzdH5h4Nl0'),
+  CODE('028', 'NtpWi0jzXs'),
+  CODE('037', 'WxOD3MpI2o'),
+  CODE('029', '6wCGEWquYy'),
+  CODE('030', 'BjSt89qTvr'),
+]
+/** A slice package (CapacityType 4) is refreshed every day; the day is UTC+8. */
+const SLICE = '4'
+
+/** WorkBuddy's own clock: the free packages are sliced by the Beijing day. */
+function beijingDay(now = Date.now()): string {
+  return new Date(now + 8 * 3600_000).toISOString().slice(0, 10)
+}
+
+function amountOf(value: unknown): number | null {
+  if (value === null || value === undefined || value === '') return null
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+/**
+ * Every package holding credits, paid and free. A free account has no `Packages`
+ * in its summary at all - its numbers only appear here, through the daily slice
+ * package (`TCACA_code_001_*`), which the vendor refreshes at Beijing midnight.
+ */
+async function fetchPackages(
+  account: AccountRecord,
+  vendor: VendorId,
+): Promise<Record<string, unknown>[]> {
+  const day = beijingDay()
+  const lists: Array<{ path: string; extra: Record<string, unknown> }> = [
+    {
+      path: '/billing/meter/get-user-resource-paid-packages',
+      extra: { PackageCodes: PAID_CODES, NeedRenewInfo: true },
+    },
+    {
+      path: '/billing/meter/get-user-resource-free-packages',
+      extra: {
+        PackageCodes: FREE_CODES,
+        SlicePeriodStartTime: `${day} 00:00:00`,
+        SlicePeriodEndTime: `${day} 23:59:59`,
+      },
+    },
+  ]
+  const out: Record<string, unknown>[] = []
+  for (const list of lists) {
+    try {
+      const data = await postMeter(account, vendor, list.path, {
+        PageNumber: 1,
+        PageSize: 200,
+        Status: [0, 3],
+        ...list.extra,
+      })
+      for (const row of asArray(data['Accounts'])) out.push(asRecord(row))
+    } catch {
+      // One list failing must not lose the other.
+    }
+  }
+  return out
+}
+
+/** A package's window: its cycle capacity, or its day's slice when it is one. */
+function windowOfPackage(pkg: Record<string, unknown>): QuotaWindow | null {
+  const capacityType = firstStr(pkg['CapacityType'])
+  const slice = capacityType === SLICE ? asRecord(asArray(pkg['SlicePeriodUsageDetails'])[0]) : {}
+  const total =
+    amountOf(slice['SlicePeriodCapacitySizePrecise']) ?? amountOf(pkg['CycleTotalCapacity'])
+  const remaining =
+    amountOf(slice['SlicePeriodCapacityRemainPrecise']) ?? amountOf(pkg['CycleRemainCapacity'])
+  const used = amountOf(pkg['CycleUsedCapacity'])
+  if (total === null && remaining === null && used === null) return null
+  const name = firstStr(pkg['PackageName'], pkg['CommodityName'], pkg['PackageCode']) || 'Credits'
+  const expiresAt = isoTimestamp(pkg['DeductionEndTime'] ?? pkg['ExpireTime'] ?? pkg['CycleEndTime'])
+  return windowOf({
+    name,
+    unit: 'credits',
+    total,
+    used: used ?? (total !== null && remaining !== null ? total - remaining : null),
+    remaining,
+    ...(expiresAt !== null ? { expiresAt } : {}),
+    ...(capacityType === SLICE ? { note: '按天重置（北京时间 0 点）' } : {}),
+  })
+}
+
 /** Read the account's resource summary (the vendor's own allowance page). */
 async function fetchSummary(account: AccountRecord, vendor: VendorId): Promise<Record<string, unknown>> {
   const site = siteOf(vendor)
@@ -134,17 +265,30 @@ function createAdapter(vendor: VendorId): VendorAdapter {
 
     async readQuota(account: AccountRecord): Promise<AccountQuota> {
       const summary = await fetchSummary(account, vendor)
-      const windows = windowsOf(summary)
-      if (windows.length === 0) {
-        throw new AdapterFailure({
-          code: 'parse_failed',
-          message: `WorkBuddy 资源汇总里没有认出额度字段：${JSON.stringify(summary).slice(0, 300)}`,
-        })
+      const windows: QuotaWindow[] = []
+      // A free account's numbers live in its packages, not in the summary.
+      for (const pkg of await fetchPackages(account, vendor)) {
+        const window = windowOfPackage(pkg)
+        if (window !== null) windows.push(window)
       }
-      const plan = firstStr(summary['plan'], summary['planName'], summary['productName'])
+      if (windows.length === 0) windows.push(...windowsOf(summary))
+      const isPaid = summary['IsPaidUser'] === true
+      const named = firstStr(summary['SubscriptionPackageName'], summary['plan'], summary['planName'])
+      const plan = named.length > 0 ? named : isPaid ? 'Pro' : '免费账号'
+      if (windows.length === 0) {
+        // Neither the summary nor any package carries a number: the vendor does
+        // not publish a free allowance. Say that, rather than fail the read.
+        return {
+          account: account.account ?? '',
+          plan,
+          windows: [],
+          balance: null,
+          fetchedAt: nowIso(),
+        }
+      }
       return {
         account: account.account ?? '',
-        plan: plan.length > 0 ? plan : null,
+        plan,
         windows,
         balance: null,
         fetchedAt: nowIso(),

@@ -204,7 +204,13 @@ function AccountRow(props: {
                 {account.quota.windows.length} 个额度窗口 · 最紧 {worst === null ? '未知' : `${Math.round(worst)}% 剩余`}
               </span>
             ) : (
-              <span>{account.error ? '额度不可读' : '尚未读取'}</span>
+              <span>
+                {account.quota != null
+                  ? '上游无额度数字'
+                  : account.error
+                    ? '额度不可读'
+                    : '尚未读取'}
+              </span>
             )}
             {checkin?.amount ? <span>{checkin.amount}</span> : null}
           </div>
@@ -227,7 +233,13 @@ function AccountRow(props: {
             </div>
           ) : (
             <div className="mmp-bar-note">
-              {account.error ? account.error.message : '这个账号还没有成功读取过额度。'}
+              {account.error
+                ? account.error.message
+                : account.quota != null
+                  ? `${vendorMeta(account.vendor)?.name ?? account.vendor} 读取成功，但这个账号没有返回任何额度数字` +
+                    (account.quota.plan ? `（${account.quota.plan}）` : '') +
+                    '。免费账号的额度通常只在被限流时才由上游给出重置时间。'
+                  : '这个账号还没有成功读取过额度。'}
             </div>
           )}
           <div className="mmp-actions" style={{ marginTop: 10 }}>
